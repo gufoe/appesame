@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">GeoSense</string>
+    <string name="title_activity_maps_actvity">MapsActvity</string>
+    <string name="title_home">Stato</string>
+    <string name="title_map">Mappa</string>
+    <string name="title_settings">Impostazioni</string>
+    <string name="title_activity_maps1">Map</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_cellular_map">Segnale Cellulare</string>
+    <string name="nav_settings">Impostazioni</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="home_hello">Hello home</string>
+    <string name="settings_hello">Settings</string>
+    <string name="abilita_gps">Abilita posizionamento @string/common_google_play_services_enable_button</string>
+</resources>
