@@ -1,10 +1,12 @@
 package it.gufoe.myapplication;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -14,9 +16,19 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.obsez.android.lib.filechooser.ChooserDialog;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import static android.database.sqlite.SQLiteDatabase.openDatabase;
 
@@ -78,29 +90,110 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         mView = inflater.inflate(R.layout.fragment_home, container, false);
+
+
         return mView;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        TableLayout rv = mView.findViewById(R.id.table);
 
-        Cursor res = MainActivity.db.rawQuery("select count(*) from data", null);
-        res.moveToNext();
-        int count = res.getInt(0);
-
-
-        String sql = "select time, type, lat, lon from data order by time desc limit 100";
-        res = MainActivity.db.rawQuery(sql, null);
+        Cursor res = MainActivity.db.rawQuery("select" +
+                " count(case type when 'lte' then 1 else null end)" +
+                ",count(case when type like '%cdma' then 1 else null end)" +
+                ",count(case type when 'wifi' then 1 else null end)" +
+                " from data", null);
+//        res.moveToNext();
+//        int count = res.getInt(0);
+//
+//
+//        String sql = "select time, type, lat, lon from data order by time desc limit 100";
+//        res = MainActivity.db.rawQuery(sql, null);
 
         while (res.moveToNext()) {
-            View v = View.inflate(getContext(), R.layout.list_item, null);
-            TextView tv = v.findViewById(R.id.text1);
-            tv.setText(res.getString(0));
-            rv.addView(v);
+            View v = mView;
+            ((TextView) v.findViewById(R.id.oss_lte2)).setText(res.getString(0));
+            ((TextView) v.findViewById(R.id.oss_umts2)).setText(res.getString(1));
+            ((TextView) v.findViewById(R.id.oss_wifi2)).setText(res.getString(2));
+            ((TextView) v.findViewById(R.id.oss_tot2)).setText(
+                ""+(res.getInt(0)+res.getInt(1)+res.getInt(2))
+            );
         }
 
+        res.close();
+
+        Button export = mView.findViewById(R.id.btn_export);
+        export.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File f = new File(MainActivity.dbfile);
+                File f2 = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)+"/export.sqlite");
+                try {
+                    copy(f, f2);
+
+                    Intent intentShareFile = new Intent(Intent.ACTION_SEND);
+
+
+                    intentShareFile.setType("application/x-sqlite3");
+                    intentShareFile.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://"+f2.getAbsolutePath()));
+
+                    intentShareFile.putExtra(Intent.EXTRA_SUBJECT,
+                            "Condivisione...");
+
+                    startActivity(Intent.createChooser(intentShareFile, "Share File"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Button btn_import = mView.findViewById(R.id.btn_import);
+        btn_import.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ChooserDialog show = new ChooserDialog().with(getContext())
+                        .withFilter(false, false, "sqlite")
+                        .withStartFile(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath())
+                        .withChosenListener(new ChooserDialog.Result() {
+                            @Override
+                            public void onChoosePath(String path, File pathFile) {
+                                getContext().stopService(new Intent(getContext(), LocationService.class));
+                                MainActivity.db.close();
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                try {
+                                    copy(pathFile, new File(MainActivity.dbfile));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                MainActivity.initDatabase(getContext());
+                                MainActivity.startService(getContext());
+
+                                Toast.makeText(getContext(), "FILE: " + path, Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .build()
+                        .show();
+
+            }
+        });
+    }
+
+    public static void copy(File src, File dst) throws IOException {
+        try (FileInputStream in = new FileInputStream(src)) {
+            try (FileOutputStream out = new FileOutputStream(dst)) {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
+        }
     }
 
     // TODO: Rename method, update argument and hook method into UI event

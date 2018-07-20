@@ -104,13 +104,11 @@ public class SettingsFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
     }
     
     
     public void mapSwitch(int id, final String setting) {
-        Switch s = mView.findViewById(id);
+        Switch s = (Switch) mView.findViewById(id);
         s.setChecked(Utils.settings(getContext()).getBoolean(setting, true));
         final SharedPreferences.Editor settings = Utils.settingsEditor(getContext().getApplicationContext());
         s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -118,6 +116,7 @@ public class SettingsFragment extends Fragment {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 settings.putBoolean(setting, isChecked).apply();
                 getContext().stopService(new Intent(getContext(), LocationService.class));
+                MainActivity.startService(getContext());
             }
         });
     }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="map_types">
+        <item>LTE</item>
+        <item>UMTS</item>
+        <item>Wifi</item>
+        <item>Wifi (solo liberi)</item>
+    </string-array>
+</resources>

@@ -1,16 +1,26 @@
 package it.gufoe.myapplication;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -19,10 +29,12 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.maps.android.heatmaps.Gradient;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
 import java.util.ArrayList;
@@ -48,6 +60,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mMap;
     private CameraPosition mCamera;
     private HeatmapTileProvider mProvider;
+    private TileOverlay mOverlay;
+    private int mType = 0;
 
     public MapFragment() {
         super();
@@ -64,16 +78,31 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         mView = inflater.inflate(R.layout.fragment_map, container, false);
+        Spinner s = (Spinner) mView.findViewById(R.id.type);
+        s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                mType = position;
+                if (mMap != null) {
+                    makeHeatMap();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
         return mView;
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mMapView = mView.findViewById(R.id.map);
+        mMapView = (MapView) mView.findViewById(R.id.map);
         mMapView.onCreate(null);
         mMapView.onResume();
-        Toast.makeText(getContext(), "getting map", Toast.LENGTH_SHORT).show();
         mMapView.getMapAsync(this);
     }
 
@@ -95,29 +124,97 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        Toast.makeText(getContext(), "map ready", Toast.LENGTH_SHORT).show();
-        MapsInitializer.initialize(getContext());
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-        mCamera = CameraPosition.builder().target(new LatLng(45.784260, 12.334292)).zoom(16).tilt(45).build();
+        Location loc = getLocation();
+        LatLng l = new LatLng(45.784260, 12.334292);
+        if (loc != null) {
+            l = new LatLng(loc.getLatitude(), loc.getLongitude());
+        }
+        mCamera = CameraPosition.builder().target(l).zoom(16).build();
+
+
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCamera));
         makeHeatMap();
     }
 
-    private void makeHeatMap() {
-        List<LatLng> list = new ArrayList<LatLng>();
-        String sql = "select time, type, lat, lon, type, signal from data";
-        Cursor res = MainActivity.db.rawQuery(sql, null);
-
-        while(res.moveToNext()) {
-            list.add(new LatLng(res.getFloat(2), res.getFloat(3)));
+    public Location getLocation() {
+        LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager != null) {
+            if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getContext(), "Abilitare la posizione", Toast.LENGTH_SHORT).show();
+                return null;
+            }
+            Location lastKnownLocationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (lastKnownLocationGPS != null) {
+                return lastKnownLocationGPS;
+            } else {
+                return locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+            }
+        } else {
+            return null;
         }
+    }
 
-        if (list.size() == 0) return;
+    private void makeHeatMap() {
+        if (mOverlay != null)  {
+            mOverlay.remove();
+            mOverlay = null;
+        }
+        int[] colors = new int[] {
+                Color.rgb(255, 0, 0),
+                Color.rgb(220, 50, 0),
+                Color.rgb(200, 100, 0),
+                Color.rgb(150, 150, 0),
+                Color.rgb(100, 250, 0),
+                Color.rgb(50, 255, 50),
+        };
 
-        mProvider = new HeatmapTileProvider.Builder()
-                .data(list).build();
-        TileOverlay mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+        for (int i = 0; i < 6; i++) {
+            String type = "";
+            switch (mType) {
+                case 0:
+                    type = "lte";
+                    break;
+                case 1:
+                    type = "%cdma";
+                    break;
+                case 2:
+                    type = "wifi";
+                    break;
+                case 3:
+                    type = "free-wifi";
+                    break;
+            }
+            String sql = "select time, type, lat, lon, type, signal from data where signal="+i+" and type like '"+type+"'";
+            Cursor res = MainActivity.db.rawQuery(sql, null);
+
+            List<LatLng> list = new ArrayList<LatLng>();
+            while(res.moveToNext()) {
+                list.add(new LatLng(res.getFloat(2), res.getFloat(3)));
+            }
+
+            if (list.size() == 0) return;
+
+
+            int[] cols = {
+                    colors[i],
+                    colors[i],
+            };
+
+            float[] startPoints = {
+                0.2f, 1f
+            };
+
+            Gradient gradient = new Gradient(cols, startPoints);
+            mProvider = new HeatmapTileProvider.Builder()
+                    .gradient(gradient)
+                    .opacity(0.3)
+                    .data(list)
+                    .build();
+
+            mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+        }
     }
 
     public interface OnFragmentInteractionListener {

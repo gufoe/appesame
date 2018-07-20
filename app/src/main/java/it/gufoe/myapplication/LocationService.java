@@ -17,7 +17,6 @@ import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoCdma;
-import android.telephony.CellInfoGsm;
 import android.telephony.CellInfoLte;
 import android.telephony.CellInfoWcdma;
 import android.telephony.TelephonyManager;
@@ -80,6 +79,7 @@ public class LocationService extends Service {
         } catch (IllegalArgumentException ex) {
             Log.d(TAG, "gps provider does not exist " + ex.getMessage());
         }
+        Toast.makeText(getApplicationContext(), "Service started", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -96,7 +96,11 @@ public class LocationService extends Service {
                 }
             }
         }
-        startService(new Intent(this, this.getClass()));
+        try {
+            db.close();
+        } catch (Exception e) {}
+        Toast.makeText(getApplicationContext(), "Service destroyed", Toast.LENGTH_SHORT).show();
+        //startService(new Intent(this, this.getClass()));
     }
 
     private void initializeLocationManager() {
@@ -149,11 +153,15 @@ public class LocationService extends Service {
                 @Override
                 public void onReceive(Context c, Intent intent) {
                     List<ScanResult> results = mWifi.getScanResults();
-                    int free = 0;
+                    float free = 0;
+                    float all = 0;
                     for (ScanResult sr : results) {
                         String cap = sr.capabilities;
-                        if (!cap.contains("WPA") && !cap.contains("WEP"))
-                            free++;
+                        double sig = WifiManager.calculateSignalLevel(sr.level, 100)/100.0;
+                        all+= .5+sig;
+                        if (!cap.contains("WPA") && !cap.contains("WEP")) {
+                            free+= .5+sig;
+                        }
                     }
 
                     if (Utils.settings(getApplicationContext()).getBoolean("realtime_log", true))
@@ -165,14 +173,14 @@ public class LocationService extends Service {
                             "wifi",
                             mLastLocation.getLatitude(),
                             mLastLocation.getLongitude(),
-                            results.size(),
+                            Math.min(4, (int) all),
                     });
                     db.execSQL(sql, new Object[]{
                             getTime(),
                             "free-wifi",
                             mLastLocation.getLatitude(),
                             mLastLocation.getLongitude(),
-                            free
+                            Math.min(4, (int) free),
                     });
                 }
             }, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
@@ -196,10 +204,10 @@ public class LocationService extends Service {
                     signal = ((CellInfoLte) ci).getCellSignalStrength().getLevel();
                     type = "lte";
                 } catch (Exception e) {}
-                try {
-                    signal = ((CellInfoGsm) ci).getCellSignalStrength().getLevel();
-                    type = "gsm";
-                } catch (Exception e) {}
+//                try {
+//                    signal = ((CellInfoGsm) ci).getCellSignalStrength().getLevel();
+//                    type = "gsm";
+//                } catch (Exception e) {}
                 try {
                     signal = ((CellInfoWcdma) ci).getCellSignalStrength().getLevel();
                     type = "wcdma";
@@ -211,7 +219,7 @@ public class LocationService extends Service {
 
                 if (type != null) {
                     if (Utils.settings(getApplicationContext()).getBoolean("realtime_log", true))
-                        Toast.makeText(getApplicationContext(), "Rete " + type + ": " + signal + "/5", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "Rete " + type + ": " + (1+signal) + "/5", Toast.LENGTH_SHORT).show();
                     db.execSQL(sql, new Object[] {
                             getTime(),
                             type,

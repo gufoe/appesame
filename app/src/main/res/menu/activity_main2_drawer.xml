@@ -7,7 +7,7 @@
         <item
             android:id="@+id/nav_map"
             android:icon="@drawable/ic_menu_slideshow"
-            android:title="Porco dio di mappa" />
+            android:title="Mappa" />
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_menu_slideshow"

@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="top"
+    android:orientation="vertical"
+    android:visibility="visible"
     tools:context=".MapFragment">
 
     <!-- TODO: Update blank fragment layout -->
+
+    <Spinner
+        android:id="@+id/type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:clipChildren="true"
+        android:clipToPadding="true"
+        android:entries="@array/map_types"
+        android:padding="@dimen/activity_horizontal_margin"
+        android:spinnerMode="dialog" />
 
     <com.google.android.gms.maps.MapView
         android:id="@+id/map"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-</FrameLayout>
+
+</LinearLayout>

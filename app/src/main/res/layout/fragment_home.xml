@@ -3,29 +3,113 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="@dimen/activity_horizontal_margin"
     tools:context=".HomeFragment">
 
     <!-- TODO: Update blank fragment layout -->
 
-    <TableLayout
-        android:id="@+id/table"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TableRow
+        <TextView
+            android:id="@+id/textView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="wrap_content"
+            android:text="Statistiche"
+            android:textAppearance="@android:style/TextAppearance.Material.Title" />
 
-        <TableRow
+        <TableLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="164dp">
 
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-        <TableRow
+                <TextView
+                    android:id="@+id/oss_tot"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Osservazioni totali" />
+
+                <TextView
+                    android:id="@+id/oss_tot2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAlignment="textEnd" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/oss_wifi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Osservazioni WiFi" />
+
+                <TextView
+                    android:id="@+id/oss_wifi2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAlignment="textEnd" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/oss_lte"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Osservazioni LTE" />
+
+                <TextView
+                    android:id="@+id/oss_lte2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAlignment="textEnd" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/oss_umts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Osservazioni UMTS" />
+
+                <TextView
+                    android:id="@+id/oss_umts2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAlignment="textEnd" />
+            </TableRow>
+        </TableLayout>
+
+        <Button
+            android:id="@+id/btn_export"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </TableLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Esporta" />
+
+        <Button
+            android:id="@+id/btn_import"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Importa" />
+    </LinearLayout>
+
 </FrameLayout>
