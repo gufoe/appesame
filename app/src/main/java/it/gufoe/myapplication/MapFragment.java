@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +40,7 @@ import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import static android.database.sqlite.SQLiteDatabase.openDatabase;
 
@@ -60,8 +62,9 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mMap;
     private CameraPosition mCamera;
     private HeatmapTileProvider mProvider;
-    private TileOverlay mOverlay;
+    private Vector<TileOverlay> mOverlays = null;
     private int mType = 0;
+    private int mUltimo = -1;
 
     public MapFragment() {
         super();
@@ -79,6 +82,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         // Inflate the layout for this fragment
         mView = inflater.inflate(R.layout.fragment_map, container, false);
         Spinner s = (Spinner) mView.findViewById(R.id.type);
+        mType = 0;
         s.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -131,11 +135,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         if (loc != null) {
             l = new LatLng(loc.getLatitude(), loc.getLongitude());
         }
+
         mCamera = CameraPosition.builder().target(l).zoom(16).build();
 
 
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(mCamera));
-        makeHeatMap();
+
     }
 
     public Location getLocation() {
@@ -157,19 +162,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void makeHeatMap() {
-        if (mOverlay != null)  {
-            mOverlay.remove();
-            mOverlay = null;
+        Log.e("mappa", "crea heatmap " + mType);
+        if (mOverlays != null)  {
+            for (TileOverlay o : mOverlays) {
+                o.remove();
+            }
+            mOverlays = null;
         }
         int[] colors = new int[] {
                 Color.rgb(255, 0, 0),
                 Color.rgb(220, 50, 0),
                 Color.rgb(200, 100, 0),
                 Color.rgb(150, 150, 0),
-                Color.rgb(100, 250, 0),
-                Color.rgb(50, 255, 50),
+                Color.rgb(50, 250, 0),
+                Color.rgb(20, 255, 50),
         };
 
+        mOverlays = new Vector();
         for (int i = 0; i < 6; i++) {
             String type = "";
             switch (mType) {
@@ -189,12 +198,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             String sql = "select time, type, lat, lon, type, signal from data where signal="+i+" and type like '"+type+"'";
             Cursor res = MainActivity.db.rawQuery(sql, null);
 
+            Log.e("mappa", "crea con type con" + sql +"::::: " + res.getCount());
+
             List<LatLng> list = new ArrayList<LatLng>();
             while(res.moveToNext()) {
                 list.add(new LatLng(res.getFloat(2), res.getFloat(3)));
             }
 
-            if (list.size() == 0) return;
+            if (list.size() == 0) continue;
 
 
             int[] cols = {
@@ -213,7 +224,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     .data(list)
                     .build();
 
-            mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+            TileOverlay o = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+            mOverlays.add(o);
         }
     }
 
